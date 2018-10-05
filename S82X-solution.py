@@ -1,6 +1,6 @@
 # coding: utf-8
 import os
-os.environ['CUDA_VISIBLE_DEVICES']='1'
+os.environ['CUDA_VISIBLE_DEVICES']='0'
 import sys
 import random
 import pandas as pd
@@ -31,8 +31,8 @@ from keras.preprocessing.image import array_to_img, img_to_array, load_img#,save
 import time
 t_start = time.time()
 
-version = 5
-basic_name = f'Unet_resnet_v{version}-1060-v4-softloss'
+version = 6
+basic_name = f'Unet_resnet_v{version}-1080-v5'
 save_model_name = basic_name + '.model'
 submission_file = basic_name + '.csv'
 
@@ -80,7 +80,7 @@ ids_train, ids_valid, x_train, x_valid, y_train, y_valid, cov_train, cov_test, d
     np.array(train_df.masks.tolist()).reshape(-1, img_size_target, img_size_target, 1),
     train_df.coverage.values,
     train_df.z.values,
-    test_size=0.2, stratify=train_df.coverage_class, random_state= 11331)
+    test_size=0.2, stratify=train_df.coverage_class, random_state= 31313)
 
 def build_model():
     def conv(f, k=3, act='relu'):
@@ -231,7 +231,7 @@ def lovasz_hinge_flat(logits, labels):
         errors_sorted, perm = tf.nn.top_k(errors, k=tf.shape(errors)[0], name="descending_sort")
         gt_sorted = tf.gather(labelsf, perm)
         grad = lovasz_grad(gt_sorted)
-        loss = tf.tensordot(tf.nn.elu(errors_sorted)+1, tf.stop_gradient(grad), 1, name="loss_non_void")
+        loss = tf.tensordot(tf.nn.relu(errors_sorted), tf.stop_gradient(grad), 1, name="loss_non_void")
         return loss
 
     # deal with the void prediction case (only void pixels)
