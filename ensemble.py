@@ -1,11 +1,12 @@
 import sys
 import glob
+import numpy as np
 from keras.models import Model, load_model
-from keras.layers import Average, Input
+from keras.layers import Input, Conv2D, concatenate
 from keras.losses import mean_squared_error
 import tensorflow as tf
 
-def ensemble(models):
+def ensemble(models, random_ensemble_weight=True):
     input_shapes = models[0].input_shape
     if not isinstance(input_shapes, list):
         input_shapes = [input_shapes]
@@ -16,7 +17,10 @@ def ensemble(models):
         model.name = 'ensemble_t_output_%d'%n
         out = model(inp_b)
         output_.append(out)
-    ensemble_m_output = Average() (output_)
+    ensemble_m_output = concatenate(output_, axis=-1)
+    limit = np.sqrt(6/len(models))
+    weights = np.random.uniform(-limit, limit, size=(1,1,len(models),1)) if random_ensemble_weight else np.ones((1,1,len(models),1),dtype=np.float32) / len(models)
+    ensemble_m_output = Conv2D(1, (1,1), padding='valid', use_bias=False, weights=[weights]) (ensemble_m_output)
     return Model(model_inputs, ensemble_m_output, name='ensemble_model')
 
 if __name__ == '__main__':
